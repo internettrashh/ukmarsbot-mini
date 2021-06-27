@@ -2,14 +2,24 @@
 
 use <pd-gears/pd-gears.scad>
 
-// helper
-function module_to_circular_pitch(module_val) = module_val * PI;
+/* TODO
+   * Adjustments to positions
+   * Look at motor mount detail.
+   * Add more parameterization of design (especially in y direction and for wheels).
+   * Hollow out wheels
+*/
 
 //
 // What things to render
 //
 render_whole_mouse = true;
+render_gears_only = false;
+
+// options
 rounded_motor_holder = false;
+
+// helper
+function module_to_circular_pitch(module_val) = module_val * PI;
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //        .__                          
@@ -290,7 +300,7 @@ module motor_holder()
 {
     translate([0, holder_seperation, 0]) {
         difference()
-        {
+        { 
             color([1,1,1]) if(rounded_motor_holder)
             {
                 roundcube(holder_length, holder_width, holder_height, 0.5, 0.5);
@@ -316,20 +326,14 @@ module motor_holder()
 //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-board();
+if(render_whole_mouse)
+{
+    board();
 
-motor_gear_offset = motor_body_length + motor_shift_protrude_length/2 - motor_gear_thickness/2;
-wheel_additional_offset = wheel_gear_thickness/2 - motor_gear_thickness/2;
+    motor_gear_offset = motor_body_length + motor_shift_protrude_length/2 - motor_gear_thickness/2;
+    wheel_additional_offset = wheel_gear_thickness/2 - motor_gear_thickness/2;
 
-translate([-motor_sets_backwards_offset, 0, motor_body_diameter/2+motor_rise]) {   
-    translate([0, -motor_separation/2, 0]) {
-        motor();
-        translate([0, -motor_gear_offset, 0]) {
-            motor_gear([0,0,0], 0);
-            translate([0, wheel_additional_offset, 0]) wheel_assembly();
-        }
-    }
-    mirror([0,1,0]) {
+    translate([-motor_sets_backwards_offset, 0, motor_body_diameter/2+motor_rise]) {   
         translate([0, -motor_separation/2, 0]) {
             motor();
             translate([0, -motor_gear_offset, 0]) {
@@ -337,13 +341,31 @@ translate([-motor_sets_backwards_offset, 0, motor_body_diameter/2+motor_rise]) {
                 translate([0, wheel_additional_offset, 0]) wheel_assembly();
             }
         }
+        mirror([0,1,0]) {
+            translate([0, -motor_separation/2, 0]) {
+                motor();
+                translate([0, -motor_gear_offset, 0]) {
+                    motor_gear([0,0,0], 0);
+                    translate([0, wheel_additional_offset, 0]) wheel_assembly();
+                }
+            }
+        }
+    }
+
+    translate([-holder_length/2-motor_sets_backwards_offset, 0, 0]) {
+        motor_holder();
+        mirror([0,1,0]) {
+            motor_holder();
+        }
     }
 }
-
-translate([-holder_length/2-motor_sets_backwards_offset, 0, 0]) {
-    motor_holder();
-    mirror([0,1,0]) {
-        motor_holder();
+else if(render_gears_only)
+{
+    rotate([-90, 0, 0])
+    {
+        motor_gear([0,0,0], 0);
+        translate([wheel_gear_PR+motor_PR+1, 0, 0]) wheel_and_gear([0,0,0], 0);
+        translate([-(wheel_gear_PR+motor_PR+1), 0, 0]) wheel_and_gear([0,0,0], 0);
     }
 }
 
