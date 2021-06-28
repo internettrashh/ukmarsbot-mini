@@ -4,19 +4,31 @@ use <pd-gears/pd-gears.scad>
 
 /* TODO
    * Adjustments to positions
-   * Look at motor mount detail.
+   * Look at motor mount detail
+   *   - hole for axles
+   *   - holes for mounting (Motor mount screws)
    * Add more parameterization of design (especially in y direction and for wheels).
    * Hollow out wheels
+   
+   	•	It may be convenient at some point to have the drawing x origin at the motor axle position. (Maybe rather than recalculating everything I'll just put an option in the top of the file (so we can have PCB view and motor view).)
+	•	PCB to gear spacing (looks like we could get another 1-2 mm of PCB there.)
+	•	Motor shaft length
+	•	Motor hole tuning (after print)
+	•	Decide on wheel axle width (what is wheel axle hole in mount, e.g. bearing diameter, or whatever)
+    •	Tyre sizes?
+
 */
 
 //
 // What things to render
 //
-render_whole_mouse = true;
+render_whole_mouse = true;                                         
 render_gears_only = false;
+render_pcb_only = false;
+export_pcb = false;
 
 // options
-rounded_motor_holder = false;
+rounded_motor_holder = true;
 
 // helper
 function module_to_circular_pitch(module_val) = module_val * PI;
@@ -34,13 +46,14 @@ function module_to_circular_pitch(module_val) = module_val * PI;
 board_length = 50;
 board_width_min = 28;
 board_width_max = 40;
+board_thickness = 0.8;
 
 motor_body_length = 12;
 motor_body_diameter = 6;
 motor_shift_protrude_length = 4;
 motor_shift_diameter = 1;
 
-motor_separation = 3;
+motor_separation = 4;
 
 // gear definitions
 // Ratio 37:9 (no coprime) - 4.111
@@ -72,6 +85,7 @@ tyre_thickness = 1.5;
 holder_height = 8;
 holder_width = 4;
 holder_length = 20;
+holder_separation = 10;
 
 // general positions
 motor_sets_backwards_offset = 5;
@@ -90,10 +104,9 @@ wheel_gear_OD = 2*outer_radius(wheel_gear_mm_per_tooth, wheel_gear_teeth, 0);
 echo(str("Wheel Gear large outside diameter = ", wheel_gear_OD, "mm"));
 wheel_tyre_OD = wheel_diameter+2*tyre_thickness;
 
-// additive sizes
+// additive sizes - board calculations
 motor_to_board_clearance = (wheel_tyre_OD/2 + wheel_gear_PR + motor_PR + wheel_to_board_edge_extra_clearance);
-echo(str(board_length/2," ",motor_to_board_clearance));
-// board calculations
+//echo(str(board_length/2," ",motor_to_board_clearance));
 
 
 // board tail calculations
@@ -116,21 +129,22 @@ in_front_of_wheels_board_position = motor_to_board_clearance-motor_sets_backward
 
 module torus(r1, r2)
 {
-    rotate_extrude(convexity = 10)
+    rotate_extrude(convexity = 10, $fn=50)
     translate([r2, 0, 0])
-    circle(r = r1, $fn = 100);
+    circle(r = r1, $fn = 50);
 }
 
 module roundcube(h, l, w, side_r, top_r)
 {
-    difference()
+    //difference()
     {
         hull()
         {
-            translate([side_r,side_r,0]) cylinder(0.1, side_r, side_r);
-            translate([w-side_r, side_r,0]) cylinder(0.1, side_r, side_r);
-            translate([side_r, l-side_r,0]) cylinder(0.1, side_r, side_r);
-            translate([w-side_r, l-side_r,0]) cylinder(0.1, side_r, side_r);
+            fn_cylinder=30;
+            translate([side_r,side_r,0]) cylinder(0.05, side_r, side_r, $fn=fn_cylinder);
+            translate([w-side_r, side_r,0]) cylinder(0.05, side_r, side_r, $fn=fn_cylinder);
+            translate([side_r, l-side_r,0]) cylinder(0.05, side_r, side_r, $fn=fn_cylinder);
+            translate([w-side_r, l-side_r,0]) cylinder(0.05, side_r, side_r, $fn=fn_cylinder);
             translate([side_r, side_r, h-top_r]) torus(top_r, side_r-top_r);
             translate([w-side_r, side_r, h-top_r]) torus(top_r, side_r-top_r);
             translate([side_r, l-side_r, h-top_r]) torus(top_r, side_r-top_r);
@@ -171,7 +185,7 @@ module xgear(mm_per_tooth, teeth, thickness, hole_diameter, center = false)
         }
     }
     else
-        gear(mm_per_tooth, teeth, thickness, hole_diameter, center);
+        gear(mm_per_tooth, teeth, thickness, hole_diameter, center, pressure_angle  = 20);
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -185,7 +199,6 @@ module xgear(mm_per_tooth, teeth, thickness, hole_diameter, center = false)
 
 module board()
 {
-    board_thickness = 1.6;
     r = board_width_max/2;
     color([0.3, 0.7, 0.3, 0.7]) union() {
         // main narrow square
@@ -219,6 +232,20 @@ module motor()
         translate([0, 0, motor_body_length]) {
             rs = motor_shift_diameter/2;
             cylinder(motor_shift_protrude_length, rs, rs);
+        }
+    }
+}
+
+module motor_hole()
+{
+    translate([holder_length/2, motor_body_length, motor_body_diameter/2+motor_rise]) {
+        /*color([0.3, 0.3, 0.7, 0.7])*/ rotate([90,0,0]) {
+            rb = motor_body_diameter/2 * 1.05;
+            cylinder(motor_body_length, rb, rb, $fn=40);
+            //translate([0, 0, motor_body_length]) {
+            //    rs = motor_shift_diameter/2;
+            //    cylinder(motor_shift_protrude_length, rs, rs);
+            //}
         }
     }
 }
@@ -294,16 +321,16 @@ module wheel_assembly()
 
 
 
-holder_seperation = 7;
 
 module motor_holder()
 {
-    translate([0, holder_seperation, 0]) {
-        difference()
+    translate([0, holder_separation, 0]) {
+        difference()    // change to iunion to see the motor mount holes rendered
         { 
             color([1,1,1]) if(rounded_motor_holder)
             {
-                roundcube(holder_length, holder_width, holder_height, 0.5, 0.5);
+                echo(str("roundcube = ", holder_length, ", ", holder_width, ", ", holder_height));
+                roundcube(holder_height, holder_width, holder_length, 1.4, 0.7);
             }
             else
             {
@@ -311,6 +338,14 @@ module motor_holder()
             }
             // put axle holes in motor holder here
             // put mounting holder in motor holder here
+            union() {
+                motor_hole();
+                translate([holder_length/2, wheel_shaft_length, holder_height/2])  {
+                    r = wheel_shaft_diameter/2;
+                    translate([0,0,0]) rotate([90, 0, 0]) cylinder(wheel_shaft_length, r*1.1, r*1.1, $fn=20);
+                    translate([0,0,0]) rotate([90, 0, 0]) cylinder(wheel_shaft_length, r*1.1, r*1.1, $fn=20);
+                }
+            }
         }
     }
 }
@@ -368,4 +403,14 @@ else if(render_gears_only)
         translate([-(wheel_gear_PR+motor_PR+1), 0, 0]) wheel_and_gear([0,0,0], 0);
     }
 }
+else if(render_pcb_only)
+{
+    board();
+}
+else if(export_pcb)
+{
+    // http://rasterweb.net/raster/2012/07/16/openscad-to-dxf/
+    projection(cut=false) import("prototype1_pcb28June2021.stl");
+}
+
 
