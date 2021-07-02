@@ -1,6 +1,7 @@
 // Micromouse wheel & gear train
 
 use <pd-gears/pd-gears.scad>
+use <simple_wheels.scad>
 
 /* TODO
    * Adjustments to positions
@@ -26,12 +27,18 @@ render_whole_mouse = true;
 render_gears_only = false;
 render_pcb_only = false;
 export_pcb = false;
+number_of_wheels = 4;
 
 // options
 rounded_motor_holder = true;
 
 // helper
 function module_to_circular_pitch(module_val) = module_val * PI;
+
+// To show comparative size to classic Micromouse
+//translate([-26, -20, -3]) import("ukmarsbot.dxf");
+//translate([10, -62, 6.5]) rotate([0,0,90]) import("ukmarsbot-a v47.stl");
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //        .__                          
@@ -50,18 +57,22 @@ board_thickness = 0.8;
 
 motor_body_length = 12;
 motor_body_diameter = 6;
-motor_shift_protrude_length = 4;
-motor_shift_diameter = 1;
+motor_shaft_protrude_length = 3.5;
+motor_shaft_diameter = 0.8;
 
 motor_separation = 4;
 
 // gear definitions
 // Ratio 37:9 (no coprime) - 4.111
-module_value = 0.3;
+module_value_4wheel = 0.3;
+module_value_2wheel = 0.5;
+//module_value = (number_of_wheels==4) ? module_value_4wheel : module_value_2wheel;
+module_value = module_value_4wheel;
 
 // motor gear definitions
 motor_gear_teeth = 9;
 motor_gear_mm_per_tooth = module_to_circular_pitch(module_value);
+motor_gear_mm_per_tooth_2w = module_to_circular_pitch(module_value_2wheel);
 motor_gear_hole = 0.8;
 motor_gear_thickness = 1.5;
 motor_gear_outside_radius = outer_radius(motor_gear_mm_per_tooth, motor_gear_teeth, 0);
@@ -75,11 +86,14 @@ wheel_shaft_length = 15;
 wheel_gear_teeth = 37;
 wheel_gear_mm_per_tooth = module_to_circular_pitch(module_value);
 wheel_gear_thickness = 1.4;
-wheel_diameter = 10;
-wheel_thickness = 3;
+wheel_diameter = 11;
+wheel_diameter_2w = 18;
+//wheel_diameter = (number_of_wheels==4) ? wheel_diameter_4w : wheel_diameter_2w;
+
+wheel_thickness = 4.5;
 //wheel_hole = wheel_thickness-wheel_gear_thickness;
 wheel_hole = wheel_shaft_diameter;
-tyre_thickness = 1.5;
+tyre_thickness = 1.4;
 
 // axle holder sizes
 holder_height = 8;
@@ -88,9 +102,14 @@ holder_length = 20;
 holder_separation = 10;
 
 // general positions
-motor_sets_backwards_offset = 5;
+motor_sets_backwards_offset_4w = 5;
+motor_sets_backwards_offset_2w = 13;
+motor_sets_backwards_offset = motor_sets_backwards_offset_4w;
 wheel_to_board_edge_extra_clearance = 0.5;
-motor_rise = 0.8;
+
+motor_rise_4w = 0.8;
+motor_rise_2w = 2.8;
+motor_rise = (number_of_wheels==4) ? motor_rise_4w : motor_rise_2w;
 
 //
 // Gear dimensions
@@ -110,13 +129,18 @@ motor_to_board_clearance = (wheel_tyre_OD/2 + wheel_gear_PR + motor_PR + wheel_t
 
 
 // board tail calculations
-board_tail_length = (board_length/2)-motor_to_board_clearance-motor_sets_backwards_offset;
+board_tail_length = (board_length/2)-motor_to_board_clearance-motor_sets_backwards_offset_4w;
 enable_board_tail = board_tail_length >= 3;
 
 // front calculations
-in_front_of_wheels_board_position = motor_to_board_clearance-motor_sets_backwards_offset;
+in_front_of_wheels_board_position = motor_to_board_clearance-motor_sets_backwards_offset_4w;
 
 
+//
+// some calculations for the 2 wheel variant
+//
+motor_PR_2w = pitch_radius(motor_gear_mm_per_tooth_2w, motor_gear_teeth);
+wheel_gear_PR_2w = pitch_radius(motor_gear_mm_per_tooth_2w, wheel_gear_teeth);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //                                    .___             ___.             
@@ -230,21 +254,21 @@ module motor()
         rb = motor_body_diameter/2;
         cylinder(motor_body_length, rb, rb);
         translate([0, 0, motor_body_length]) {
-            rs = motor_shift_diameter/2;
-            cylinder(motor_shift_protrude_length, rs, rs);
+            rs = motor_shaft_diameter/2;
+            cylinder(motor_shaft_protrude_length, rs, rs);
         }
     }
 }
 
-module motor_hole()
+module motor_hole(motor_height)
 {
-    translate([holder_length/2, motor_body_length, motor_body_diameter/2+motor_rise]) {
+    translate([holder_length/2, motor_body_length, motor_body_diameter/2+motor_height]) {
         /*color([0.3, 0.3, 0.7, 0.7])*/ rotate([90,0,0]) {
             rb = motor_body_diameter/2 * 1.05;
             cylinder(motor_body_length, rb, rb, $fn=40);
             //translate([0, 0, motor_body_length]) {
-            //    rs = motor_shift_diameter/2;
-            //    cylinder(motor_shift_protrude_length, rs, rs);
+            //    rs = motor_shaft_diameter/2;
+            //    cylinder(motor_shaft_protrude_length, rs, rs);
             //}
         }
     }
@@ -262,6 +286,16 @@ module motor_gear(pos, flip=0)     // orange
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+module motor_gear_2wheel(pos, flip=0)     // orange
+{
+    translate(pos)
+        rotate([90,90,0]) color([1.00,0.75,0.50])
+        mirror([0,0,flip])
+            xgear(motor_gear_mm_per_tooth_2w, motor_gear_teeth, motor_gear_thickness, motor_gear_hole, center = false);
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+
 module wheel(diameter, thickness, hole_diameter, center = false)
 {
     r = diameter/2;
@@ -274,7 +308,7 @@ module wheel(diameter, thickness, hole_diameter, center = false)
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-module wheel_and_gear(pos, flip=0)
+module wheel_and_gear(pos, flip=0, mm_per_tooth, wheel_dia)
 {
     angle=0; offset=0; offsety=0;
     translate(pos)
@@ -282,8 +316,8 @@ module wheel_and_gear(pos, flip=0)
         rotate([90,90,0]) 
         mirror([0,0,flip])
             {
-            color([0.75,1.00,0.75]) xgear(wheel_gear_mm_per_tooth, wheel_gear_teeth, wheel_gear_thickness, wheel_hole, center = false);
-            translate([0,0,wheel_gear_thickness-0.1]) color([0.5,1.00,0.5]) wheel(wheel_diameter, wheel_thickness, wheel_hole, center = false);
+            color([0.75,1.00,0.75]) xgear(mm_per_tooth, wheel_gear_teeth, wheel_gear_thickness, wheel_hole, center = false);
+            translate([0,0,wheel_gear_thickness-0.1]) color([0.5,1.00,0.5]) wheel(wheel_dia, wheel_thickness, wheel_hole, center = false);
             }
 }
 
@@ -291,7 +325,7 @@ module wheel_and_gear(pos, flip=0)
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
-module tyre(pos, flip=0)
+module tyre(pos, flip=0, wheel_dia)
 {
     angle=0; offset=0; offsety=0;
     translate(pos)
@@ -299,7 +333,7 @@ module tyre(pos, flip=0)
         rotate([90,90,0]) 
         mirror([0,0,flip])
             {
-            translate([0,0,wheel_gear_thickness-0.1]) color([0, 0, 0.2, 0.5]) wheel(wheel_diameter+2*tyre_thickness, wheel_thickness, wheel_diameter, center = false);
+            translate([0,0,wheel_gear_thickness-0.1]) color([0, 0, 0.2, 0.5]) wheel(wheel_dia+2*tyre_thickness, wheel_thickness, wheel_diameter, center = false);
             }
 }
 
@@ -308,21 +342,30 @@ module tyre(pos, flip=0)
 module wheel_assembly()
 {
     translate([wheel_gear_PR+motor_PR,0,0]) {
-        wheel_and_gear([0,0,0], 0);
-        tyre([0, 0, 0], 0);
+        wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
+        tyre([0, 0, 0], 0, wheel_diameter);
     }
     translate([-(wheel_gear_PR+motor_PR),0,0]) {
-        wheel_and_gear([0,0,0],0);
-        tyre([0, 0, 0], 0);
+        wheel_and_gear([0,0,0],0, wheel_gear_mm_per_tooth, wheel_diameter);
+        tyre([0, 0, 0], 0, wheel_diameter);
     }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+module wheel_assembly_2wheel()
+{
+    translate([wheel_gear_PR_2w+motor_PR_2w,0,0]) {
+        wheel_and_gear([0,0,0], 0, motor_gear_mm_per_tooth_2w, wheel_diameter_2w);
+        tyre([0, 0, 0], 0, wheel_diameter_2w);
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 
 
-module motor_holder()
+
+module motor_holder(motor_height)
 {
     translate([0, holder_separation, 0]) {
         difference()    // change to iunion to see the motor mount holes rendered
@@ -339,7 +382,7 @@ module motor_holder()
             // put axle holes in motor holder here
             // put mounting holder in motor holder here
             union() {
-                motor_hole();
+                motor_hole(motor_height);
                 translate([holder_length/2, wheel_shaft_length, holder_height/2])  {
                     r = wheel_shaft_diameter/2;
                     translate([0,0,0]) rotate([90, 0, 0]) cylinder(wheel_shaft_length, r*1.1, r*1.1, $fn=20);
@@ -365,18 +408,11 @@ if(render_whole_mouse)
 {
     board();
 
-    motor_gear_offset = motor_body_length + motor_shift_protrude_length/2 - motor_gear_thickness/2;
+    motor_gear_offset = motor_body_length + motor_shaft_protrude_length/2 - motor_gear_thickness/2;
     wheel_additional_offset = wheel_gear_thickness/2 - motor_gear_thickness/2;
 
-    translate([-motor_sets_backwards_offset, 0, motor_body_diameter/2+motor_rise]) {   
-        translate([0, -motor_separation/2, 0]) {
-            motor();
-            translate([0, -motor_gear_offset, 0]) {
-                motor_gear([0,0,0], 0);
-                translate([0, wheel_additional_offset, 0]) wheel_assembly();
-            }
-        }
-        mirror([0,1,0]) {
+    if(number_of_wheels == 4) {
+        translate([-motor_sets_backwards_offset, 0, motor_body_diameter/2+motor_rise]) {   
             translate([0, -motor_separation/2, 0]) {
                 motor();
                 translate([0, -motor_gear_offset, 0]) {
@@ -384,13 +420,42 @@ if(render_whole_mouse)
                     translate([0, wheel_additional_offset, 0]) wheel_assembly();
                 }
             }
+            mirror([0,1,0]) {
+                translate([0, -motor_separation/2, 0]) {
+                    motor();
+                    translate([0, -motor_gear_offset, 0]) {
+                        motor_gear([0,0,0], 0);
+                        translate([0, wheel_additional_offset, 0]) wheel_assembly();
+                    }
+                }
+            }
+        }
+    } else if(number_of_wheels == 2)
+    {
+        translate([-motor_sets_backwards_offset_2w, 0, motor_body_diameter/2+motor_rise]) {   
+            translate([0, -motor_separation/2, 0]) {
+                motor();
+                translate([0, -motor_gear_offset, 0]) {
+                    motor_gear_2wheel([0,0,0], 0);
+                    translate([0, wheel_additional_offset, 0]) wheel_assembly_2wheel();
+                }
+            }
+            mirror([0,1,0]) {
+                translate([0, -motor_separation/2, 0]) {
+                    motor();
+                    translate([0, -motor_gear_offset, 0]) {
+                        motor_gear_2wheel([0,0,0], 0);
+                        translate([0, wheel_additional_offset, 0]) wheel_assembly_2wheel();
+                    }
+                }
+            }
         }
     }
-
+    
     translate([-holder_length/2-motor_sets_backwards_offset, 0, 0]) {
-        motor_holder();
+        motor_holder(motor_rise_4w);
         mirror([0,1,0]) {
-            motor_holder();
+            motor_holder(motor_rise_4w);
         }
     }
 }
@@ -399,8 +464,8 @@ else if(render_gears_only)
     rotate([-90, 0, 0])
     {
         motor_gear([0,0,0], 0);
-        translate([wheel_gear_PR+motor_PR+1, 0, 0]) wheel_and_gear([0,0,0], 0);
-        translate([-(wheel_gear_PR+motor_PR+1), 0, 0]) wheel_and_gear([0,0,0], 0);
+        translate([wheel_gear_PR+motor_PR+1, 0, 0]) wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
+        translate([-(wheel_gear_PR+motor_PR+1), 0, 0]) wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
     }
 }
 else if(render_pcb_only)
@@ -414,3 +479,6 @@ else if(export_pcb)
 }
 
 
+//translate([0, -15, 0])
+//rotate([90, 0, 0])  
+//zwheel();
