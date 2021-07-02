@@ -4,6 +4,8 @@ use <pd-gears/pd-gears.scad>
 
 show_reference_wheel = false;
 show_tyre = true;
+enable_holes_in_gear = true;    // Currently hardcoded, not calculated based on size.
+
 
 if(show_reference_wheel) {
     translate([-12, 0, 5])      // side by side
@@ -84,6 +86,24 @@ function module_to_circular_pitch(module_val) = module_val * PI;
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //
+// make wheels lighter
+//
+
+number_of_circles = 6;
+hole_size = 1.2;
+hole_depth = 1 + RIM_depth + gear_thickess + gear_offset;
+hole_orbit_radius = 3;
+hole_faces = 50;
+
+module hole_circles() {
+    for(i = [0 : number_of_circles]) {
+        rotate([0, 0, i * (360 / number_of_circles)]) translate([0, hole_orbit_radius, 0])
+            cylinder(hole_depth, hole_size, hole_size, $fn=hole_faces);
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////
+//
 // zwheel
 //
 module zwheel()
@@ -100,8 +120,13 @@ module zwheel()
                 cylinder(axle_collar_length, axle_collar_diameter/2, axle_collar_diameter/2, $fn=faces);
                 translate([0,0,gear_offset]) xgear(module_to_circular_pitch(gear_module), gear_teeth, gear_thickess, axle_diameter, center=true);
             }
-        // axle
-        translate([0, 0, -RIM_depth/2]) cylinder(RIM_depth*2, axle_diameter/2, axle_diameter/2, $fn=faces);
+            union() {
+                // axle
+                translate([0, 0, -RIM_depth/2]) cylinder(RIM_depth*2, axle_diameter/2, axle_diameter/2, $fn=faces);
+                if(enable_holes_in_gear) {
+                    hole_circles();
+                }
+            }
         }
     }
 }
