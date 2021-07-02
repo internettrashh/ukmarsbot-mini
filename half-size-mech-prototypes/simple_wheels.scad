@@ -15,10 +15,9 @@ faces = 200;
 
 // mini_UKMARS constants
 // =====================
-//RIM_OD = 11;
 //RIM_depth = 4.5;
-//RIM_outside_radius = 4.75;
-//RIM_inside_radius = 3.75;
+//RIM_outside_radius = 11/2;
+//RIM_inside_radius = RIM_outside_radius-1;
 //axle_diameter = 1;
 //axle_collar_diameter = 2; 
 //axle_collar_length = 2;
@@ -30,7 +29,6 @@ faces = 200;
 
 // Zirconia constants
 // =====================
-RIM_OD = 11;
 RIM_depth = 3.5;
 RIM_outside_radius = 4.75;
 RIM_inside_radius = 3.75;
