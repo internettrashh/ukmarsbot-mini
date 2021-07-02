@@ -2,7 +2,8 @@
 //
 use <pd-gears/pd-gears.scad>
 
-show_reference_wheel = true;
+show_reference_wheel = false;
+show_tyre = true;
 
 if(show_reference_wheel) {
     translate([-12, 0, 5])      // side by side
@@ -15,23 +16,9 @@ faces = 200;
 
 // mini_UKMARS constants
 // =====================
-//RIM_depth = 4.5;
-//RIM_outside_radius = 11/2;
-//RIM_inside_radius = RIM_outside_radius-1;
-//axle_diameter = 1;
-//axle_collar_diameter = 2; 
-//axle_collar_length = 2;
-//gear_offset = 0.5;
-//
-//gear_thickess = 1;
-//gear_teeth = 37;
-//gear_module = 0.3;
-
-// Zirconia constants
-// =====================
-RIM_depth = 3.5;
-RIM_outside_radius = 4.75;
-RIM_inside_radius = 3.75;
+RIM_depth = 4.5;
+RIM_outside_radius = 11/2;
+RIM_inside_radius = RIM_outside_radius-1;
 axle_diameter = 1;
 axle_collar_diameter = 2; 
 axle_collar_length = 2;
@@ -41,6 +28,24 @@ gear_thickess = 1;
 gear_teeth = 37;
 gear_module = 0.3;
 
+tyre_OD = 13.8;
+tyre_thickness = tyre_OD/2 - RIM_outside_radius;
+
+// Zirconia constants
+// =====================
+//RIM_depth = 3.5;
+//RIM_outside_radius = 4.75;
+//RIM_inside_radius = 3.75;
+//axle_diameter = 1;
+//axle_collar_diameter = 2; 
+//axle_collar_length = 2;
+//gear_offset = 0.5;
+//
+//gear_thickess = 1;
+//gear_teeth = 37;
+//gear_module = 0.3;
+//
+//tyre_thickness = 0;
 
 // common constants
 defined_pressure_angle = 20;
@@ -100,9 +105,39 @@ module zwheel()
         }
     }
 }
+//////////////////////////////////////////////////////////////////////////////////////////////
 
+module zzwheel(diameter, thickness, hole_diameter, center = false)
+{
+    r = diameter/2;
+    difference() {
+        cylinder(thickness, r, r, center, $fn = cylinder_segments);
+        translate([0, 0, (center ? 0 : -0.1)])
+            cylinder(h=thickness+0.2, r=hole_diameter/2, center=center, $fn=cylinder_segments);
+    }
+}
+//////////////////////////////////////////////////////////////////////////////////////////////
+wheel_diameter = RIM_outside_radius*2;
+wheel_thickness = RIM_depth;
+wheel_gear_thickness = -(RIM_depth+gear_thickess+gear_offset);
+
+module ztyre(pos, flip=0)
+{
+    angle=0; offset=0; offsety=0;
+    translate(pos)
+    rotate([0, angle, 0]) translate([offset, -flip*wheel_thickness + offsety, 0])
+        rotate([90,90,0]) 
+        mirror([0,0,flip])
+            {
+            translate([0,0,wheel_gear_thickness]) color([0.3, 0.3, 0.3, 0.5]) zzwheel(wheel_diameter+2*tyre_thickness, wheel_thickness, wheel_diameter, center = false);
+            }
+}
 //
 //
 //
 zwheel();
+if(tyre_thickness != 0 && show_tyre)
+{
+    rotate([90,0,0]) ztyre([0,0,0]);
+}
 
