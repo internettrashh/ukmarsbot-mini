@@ -39,6 +39,8 @@ function module_to_circular_pitch(module_val) = module_val * PI;
 //translate([-26, -20, -3]) import("ukmarsbot.dxf");
 //translate([10, -62, 6.5]) rotate([0,0,90]) import("ukmarsbot-a v47.stl");
 
+epsilon = 0.001;        // small constant to avoid coincident walls on union, difference or intersection
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //        .__                          
@@ -333,7 +335,7 @@ module tyre(pos, flip=0, wheel_dia)
         rotate([90,90,0]) 
         mirror([0,0,flip])
             {
-            translate([0,0,wheel_gear_thickness-0.1]) color([0, 0, 0.2, 0.5]) wheel(wheel_dia+2*tyre_thickness, wheel_thickness, wheel_diameter, center = false);
+            translate([0,0,wheel_gear_thickness-0.1-epsilon]) color([0, 0, 0.2, 0.5]) wheel(wheel_dia+2*tyre_thickness, wheel_thickness-epsilon*2, wheel_diameter, center = false);
             }
 }
 

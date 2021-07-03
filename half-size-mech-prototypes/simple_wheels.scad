@@ -16,6 +16,8 @@ if(show_reference_wheel) {
 faces = 200;
 //faces = 50;
 
+epsilon = 0.001;        // small constant to avoid coincident walls on union, difference or intersection
+
 // mini_UKMARS constants
 // =====================
 RIM_depth = 4.5;
@@ -154,7 +156,7 @@ module ztyre(pos, flip=0)
         rotate([90,90,0]) 
         mirror([0,0,flip])
             {
-            translate([0,0,wheel_gear_thickness]) color([0.3, 0.3, 0.3, 0.5]) zzwheel(wheel_diameter+2*tyre_thickness, wheel_thickness, wheel_diameter, center = false);
+            translate([0,0,wheel_gear_thickness-epsilon]) color([0.3, 0.3, 0.3, 0.5]) zzwheel(wheel_diameter+2*tyre_thickness, wheel_thickness-epsilon*2, wheel_diameter, center = false);
             }
 }
 //
