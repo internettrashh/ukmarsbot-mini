@@ -28,6 +28,7 @@ render_gears_only = false;
 render_pcb_only = false;
 export_pcb = false;
 number_of_wheels = 4;
+enable_tyres = true;
 
 // options
 rounded_motor_holder = true;
@@ -53,7 +54,7 @@ epsilon = 0.001;        // small constant to avoid coincident walls on union, di
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 board_length = 50;
-board_width_min = 28;
+board_width_min = 27;
 board_width_max = 40;
 board_thickness = 0.8;
 
@@ -62,7 +63,7 @@ motor_body_diameter = 6;
 motor_shaft_protrude_length = 3.5;
 motor_shaft_diameter = 0.8;
 
-motor_separation = 4;
+motor_separation = 3;
 
 // gear definitions
 // Ratio 37:9 (no coprime) - 4.111
@@ -80,14 +81,14 @@ motor_gear_thickness = 1.5;
 motor_gear_outside_radius = outer_radius(motor_gear_mm_per_tooth, motor_gear_teeth, 0);
 
 // other wheel specific items
-wheel_shaft_diameter = 1.5;         // these are the shaft diameters for Rob's axles
+wheel_shaft_diameter = 1;         // these are the shaft diameters for Rob's axles
 //wheel_shaft_diameter = 2.2;       // Size for M2 screws???
-wheel_shaft_length = 15;
+wheel_shaft_length = 10;
 
 // wheel gear sizes
 wheel_gear_teeth = 37;
 wheel_gear_mm_per_tooth = module_to_circular_pitch(module_value);
-wheel_gear_thickness = 1.4;
+wheel_gear_thickness = 1;
 wheel_diameter = 11;
 wheel_diameter_2w = 18;
 //wheel_diameter = (number_of_wheels==4) ? wheel_diameter_4w : wheel_diameter_2w;
@@ -101,7 +102,7 @@ tyre_thickness = 1.4;
 holder_height = 8;
 holder_width = 4;
 holder_length = 20;
-holder_separation = 10;
+holder_separation = 9.5;
 
 // general positions
 motor_sets_backwards_offset_4w = 5;
@@ -310,17 +311,31 @@ module wheel(diameter, thickness, hole_diameter, center = false)
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
+basic_wheels = false;
+m_axle_collar_diameter = wheel_hole+1; 
+m_axle_collar_length = 2;
+
 module wheel_and_gear(pos, flip=0, mm_per_tooth, wheel_dia)
 {
-    angle=0; offset=0; offsety=0;
-    translate(pos)
-    rotate([0, angle, 0]) translate([offset, -flip*wheel_thickness + offsety, 0])
-        rotate([90,90,0]) 
-        mirror([0,0,flip])
-            {
-            color([0.75,1.00,0.75]) xgear(mm_per_tooth, wheel_gear_teeth, wheel_gear_thickness, wheel_hole, center = false);
-            translate([0,0,wheel_gear_thickness-0.1]) color([0.5,1.00,0.5]) wheel(wheel_dia, wheel_thickness, wheel_hole, center = false);
+    if(basic_wheels) {
+        angle=0; offset=0; offsety=0;
+        translate(pos)
+        rotate([0, angle, 0]) translate([offset, -flip*wheel_thickness + offsety, 0])
+            rotate([90,90,0]) 
+            mirror([0,0,flip])
+                {
+                color([0.75,1.00,0.75]) xgear(mm_per_tooth, wheel_gear_teeth, wheel_gear_thickness, wheel_hole, center = false);
+                translate([0,0,wheel_gear_thickness-0.1]) color([0.5,1.00,0.5]) wheel(wheel_dia, wheel_thickness, wheel_hole, center = false);
+                }
+        }
+    else {
+            move_wheel = 0.5;
+            translate([0,move_wheel,0])
+                rotate([90,0,0]) { simple_wheel(wheel_thickness, wheel_gear_thickness, move_wheel, wheel_dia/2, wheel_dia/2-1, m_axle_collar_diameter, m_axle_collar_length, wheel_hole, wheel_gear_teeth, module_value_4wheel);
+                translate([0, 0, -6.5
+                    ]) cylinder(wheel_shaft_length, wheel_hole/2, wheel_hole/2, $fn=10);
             }
+    }
 }
 
 
@@ -345,11 +360,11 @@ module wheel_assembly()
 {
     translate([wheel_gear_PR+motor_PR,0,0]) {
         wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
-        tyre([0, 0, 0], 0, wheel_diameter);
+        if(enable_tyres) { tyre([0, 0, 0], 0, wheel_diameter); }
     }
     translate([-(wheel_gear_PR+motor_PR),0,0]) {
         wheel_and_gear([0,0,0],0, wheel_gear_mm_per_tooth, wheel_diameter);
-        tyre([0, 0, 0], 0, wheel_diameter);
+        if(enable_tyres) { tyre([0, 0, 0], 0, wheel_diameter); }
     }
 }
 
@@ -359,7 +374,7 @@ module wheel_assembly_2wheel()
 {
     translate([wheel_gear_PR_2w+motor_PR_2w,0,0]) {
         wheel_and_gear([0,0,0], 0, motor_gear_mm_per_tooth_2w, wheel_diameter_2w);
-        tyre([0, 0, 0], 0, wheel_diameter_2w);
+        if(enable_tyres) { tyre([0, 0, 0], 0, wheel_diameter_2w); }
     }
 }
 //////////////////////////////////////////////////////////////////////////////////////////////
