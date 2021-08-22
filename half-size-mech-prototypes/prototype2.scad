@@ -393,7 +393,7 @@ module tyre(pos, flip=0, wheel_dia)
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // MR62ZZ (2x6x2.5mm) 
-bearing_OD = 6+0.5; // 0.5 is clearance
+bearing_OD = 6+0.2; // 0.2 is clearance
 bearing_ID = 2;
 bearing_thickness = 2.5;
 
