@@ -59,7 +59,7 @@ RIM_gear_holder_outside_radius = RIM_gear_holder_inside_radius + 1;
 // Saves generating full gears when prototyping
 //////////////////////////////////////////////////////////////////////////////////////////////
 replace_cylinder = false;
-cylinder_segments = 40;
+cylinder_segments = 100;
 
 module xgear(mm_per_tooth, teeth, thickness, hole_diameter, center = false)
 {
