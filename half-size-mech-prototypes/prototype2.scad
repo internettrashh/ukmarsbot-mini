@@ -277,9 +277,9 @@ module board()
             }
         }
         union() {
-        translate([-motor_sets_backwards_offset_4w, holder_separation, 0])
+        translate([-motor_sets_backwards_offset_4w, holder_separation, -epsilon])
             screw_pair();
-        mirror([0,1,0]) translate([-motor_sets_backwards_offset_4w, holder_separation, 0])
+        mirror([0,1,0]) translate([-motor_sets_backwards_offset_4w, holder_separation, -epsilon])
             screw_pair();
         }
     }
