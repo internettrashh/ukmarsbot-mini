@@ -18,8 +18,9 @@ function module_to_circular_pitch(module_val) = module_val * PI;
 
 // mini_UKMARS constants
 // =====================
+type_expansion = 2;     // expand rhe rim and tyre to we don't run on the gear teeth
 m_RIM_depth = 4.5;
-m_RIM_outside_radius = 11/2;
+m_RIM_outside_radius = (11+type_expansion)/2;
 m_RIM_inside_radius = m_RIM_outside_radius-1;
 RIM_back_depth = 1;
 
@@ -34,7 +35,7 @@ m_subgear_teeth = 11;
 m_axle_diameter = 1.5;        // usually this is smaller, but we widen to 2mm
 m_gear_offset = m_axle_collar_length;
 
-m_tyre_OD = 13.8;
+m_tyre_OD = 13.8+type_expansion;
 m_tyre_thickness = m_tyre_OD/2 - m_RIM_outside_radius;
 
 // common constants
@@ -43,7 +44,7 @@ defined_pressure_angle = 20;
 // gear holder
 RIM_gear_holder_depth = m_subgear_thickness;
 RIM_gear_holder_thickness = 1;
-gear_pinch_radius = 0;
+gear_pinch_radius = -0.2;       // negative = give it a bit of extra clearence, positive = make it tighter
 RIM_gear_holder_inside_radius = outer_radius(module_to_circular_pitch(m_gear_module), m_subgear_teeth) - gear_pinch_radius;
 RIM_gear_holder_outside_radius = RIM_gear_holder_inside_radius + 1;
 
@@ -82,9 +83,9 @@ module xgear(mm_per_tooth, teeth, thickness, hole_diameter, center = false)
 
 module hole_circles(RIM_depth, gear_thickness, gear_offset) {
     number_of_circles = 9;
-    hole_size = 0.7;
+    hole_size = 0.9;
     hole_depth = 1 + RIM_depth + gear_thickness + gear_offset;
-    hole_orbit_radius = 3.6;
+    hole_orbit_radius = 3.8-gear_pinch_radius;
     hole_faces = 50;
     
     for(i = [0 : number_of_circles]) {

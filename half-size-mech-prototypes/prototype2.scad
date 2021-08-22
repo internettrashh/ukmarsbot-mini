@@ -30,6 +30,7 @@ rounded_motor_holder = false;
 hide_wheels_and_motor = false; // option for render_whole_mouse only
 SHOW_SCREW_DEPTH = false;   // ensure false in real print
 hide_one_wheel_pair = false;
+disable_screw_heads = true;
 
 // helper
 function module_to_circular_pitch(module_val) = module_val * PI;
@@ -231,7 +232,7 @@ module xgear(mm_per_tooth, teeth, thickness, hole_diameter, center = false)
 
 module mount_screw()
 {    
-    rh = mount_holder_screw_diameter_head_diameter/2;
+    rh = (disable_screw_heads ? mount_holder_screw_diameter : mount_holder_screw_diameter_head_diameter) /2;
     rd = mount_holder_screw_diameter/2;
     // head
     cylinder(mount_holder_screw_diameter_head_depth, rh, rd, $fn=mount_holder_screw_faces);
@@ -392,7 +393,7 @@ module tyre(pos, flip=0, wheel_dia)
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 // MR62ZZ (2x6x2.5mm) 
-bearing_OD = 6;
+bearing_OD = 6+0.5; // 0.5 is clearance
 bearing_ID = 2;
 bearing_thickness = 2.5;
 
