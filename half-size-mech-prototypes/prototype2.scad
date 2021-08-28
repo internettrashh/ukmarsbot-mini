@@ -29,8 +29,8 @@ basic_wheels = true;
 rounded_motor_holder = false;
 hide_wheels_and_motor = false; // option for render_whole_mouse only
 SHOW_SCREW_DEPTH = false;   // ensure false in real print
-hide_one_wheel_pair = false;
-disable_screw_heads = true;
+hide_one_wheel_pair = true;
+disable_screw_heads = false;
 
 // helper
 function module_to_circular_pitch(module_val) = module_val * PI;
@@ -103,11 +103,14 @@ holder_width = 5;
 holder_length = 24;
 holder_separation = 8.5;
 
-// screw details (M2?)
-mount_holder_screw_diameter = 1.5;
-mount_holder_screw_depth = 2.5;
-mount_holder_screw_diameter_head_diameter = 4;
-mount_holder_screw_diameter_head_depth = 1;
+// Screw details (M2*4 countersunk head, self-tapping, nickel-plated steel, flat head, metric)
+// Using longer M2 screws would be problematic, but potentially we could use M1.7*6 or M1.4*5. 
+mount_holder_screw_diameter_grip = 1.6;     // OD = 2, but we need something for the threads to grip
+mount_holder_screw_diameter_OD = 2;
+mount_holder_screw_total_depth = 3.8;       // including head, actual total = 3.65mm plus some clearance
+mount_holder_screw_head_diameter = 3.7;     // 3.65mm actual, 0.05 clearance
+mount_holder_screw_head_depth = 1;
+mount_holder_screw_depth = mount_holder_screw_total_depth-mount_holder_screw_head_depth;               // excluding head
 mount_holder_screw_faces = 15;
 
 // general positions
@@ -230,26 +233,30 @@ module xgear(mm_per_tooth, teeth, thickness, hole_diameter, center = false)
 //      \/              \/ |__|                 \/      \/      \/           \/
 //////////////////////////////////////////////////////////////////////////////////////////////
 
-module mount_screw()
+module mount_screw(pcb_section)
 {    
-    rh = (disable_screw_heads ? mount_holder_screw_diameter : mount_holder_screw_diameter_head_diameter) /2;
-    rd = mount_holder_screw_diameter/2;
+    // the mount must use a thread diameter that allows the self-tap to cut into iut
+    // the pcb wants the thread diameter for clearance
+    diameter_of_thread = pcb_section ? mount_holder_screw_diameter_OD : mount_holder_screw_diameter_grip;
+    rh = (disable_screw_heads ? diameter_of_thread : mount_holder_screw_head_diameter) /2;
+    rd = diameter_of_thread/2;
+    
     // head
-    cylinder(mount_holder_screw_diameter_head_depth, rh, rd, $fn=mount_holder_screw_faces);
+    cylinder(mount_holder_screw_head_depth, rh, rd, $fn=mount_holder_screw_faces);
     // body
-    translate([0,0,mount_holder_screw_diameter_head_depth-epsilon]) cylinder(mount_holder_screw_depth, rd, rd, $fn=mount_holder_screw_faces);
+    translate([0,0,mount_holder_screw_head_depth-epsilon]) cylinder(mount_holder_screw_depth, rd, rd, $fn=mount_holder_screw_faces);
 
 }
 
-module screw_pair()
+module screw_pair(pcb_section = false)
 {
     
     translate([0, SHOW_SCREW_DEPTH?holder_width:holder_width/2,-board_thickness-epsilon]) {
         // the screws
         translate([-(wheel_gear_PR+motor_PR)/2,0,0])
-        mount_screw();
+        mount_screw(pcb_section);
         translate([+(wheel_gear_PR+motor_PR)/2,0,0])
-        mount_screw();
+        mount_screw(pcb_section);
     }
 }
 
@@ -279,9 +286,9 @@ module board()
         }
         union() {
         translate([-motor_sets_backwards_offset_4w, holder_separation, -epsilon])
-            screw_pair();
+            screw_pair(true);
         mirror([0,1,0]) translate([-motor_sets_backwards_offset_4w, holder_separation, -epsilon])
-            screw_pair();
+            screw_pair(true);
         }
     }
 }
