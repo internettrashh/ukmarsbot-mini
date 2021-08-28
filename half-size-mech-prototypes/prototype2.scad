@@ -17,7 +17,7 @@ use <attached_wheel.scad>
 //
 // (select one of these only)
 render_whole_mouse = true;                                         
-render_gears_only = false;
+render_gears_only = false;       // at the moment render hub only from attached_wheel.scad
 render_pcb_only = false;
 render_mount_only = false;
 export_pcb = false;
@@ -88,7 +88,8 @@ wheel_shaft_length = 10;
 wheel_gear_teeth = 44;
 wheel_gear_mm_per_tooth = module_to_circular_pitch(module_value);
 wheel_gear_thickness = 1;
-wheel_diameter = 11;
+type_expansion = 2;     // expand rhe rim and tyre to we don't run on the gear teeth
+wheel_diameter = (11+type_expansion);
 wheel_diameter_2w = 18;
 //wheel_diameter = (number_of_wheels==4) ? wheel_diameter_4w : wheel_diameter_2w;
 
@@ -153,6 +154,13 @@ in_front_of_wheels_board_position = motor_to_board_clearance-motor_sets_backward
 //
 motor_PR_2w = pitch_radius(motor_gear_mm_per_tooth_2w, motor_gear_teeth);
 wheel_gear_PR_2w = pitch_radius(motor_gear_mm_per_tooth_2w, wheel_gear_teeth);
+
+// Bearing
+// MR62ZZ (2x6x2.5mm) 
+bearing_OD = 6+0.1; // 0.1 is clearance
+bearing_ID = 2;
+bearing_thickness = 2.5;
+
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 //                                    .___             ___.             
@@ -398,11 +406,6 @@ module tyre(pos, flip=0, wheel_dia)
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-
-// MR62ZZ (2x6x2.5mm) 
-bearing_OD = 6+0.2; // 0.2 is clearance
-bearing_ID = 2;
-bearing_thickness = 2.5;
 
 module bearing()
 {
