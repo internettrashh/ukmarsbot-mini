@@ -607,7 +607,7 @@ else if(render_mount_only)
 else if(export_pcb)
 {
     // http://rasterweb.net/raster/2012/07/16/openscad-to-dxf/
-    projection(cut=false) import("prototype1_pcb28June2021.stl");
+    projection(cut=false) import("output_files/prototype2v6_pcb_no_heads.stl");
 }
 
 
