@@ -135,6 +135,7 @@ wheel_gear_PR = pitch_radius(wheel_gear_mm_per_tooth, wheel_gear_teeth);
 wheel_gear_OD = 2*outer_radius(wheel_gear_mm_per_tooth, wheel_gear_teeth, 0);
 echo(str("Wheel Gear large outside diameter = ", wheel_gear_OD, "mm"));
 wheel_tyre_OD = wheel_diameter+2*tyre_thickness;
+motor_to_4wheel_centers = wheel_gear_PR+motor_PR+0.1;
 
 // additive sizes - board calculations
 motor_to_board_clearance = (wheel_tyre_OD/2 + wheel_gear_PR + motor_PR + wheel_to_board_edge_extra_clearance);
@@ -157,7 +158,7 @@ wheel_gear_PR_2w = pitch_radius(motor_gear_mm_per_tooth_2w, wheel_gear_teeth);
 
 // Bearing
 // MR62ZZ (2x6x2.5mm) 
-bearing_OD = 6+0.1; // 0.1 is clearance
+bearing_OD = 6+0.2; // 0.2 is clearance, 0.1 is too tight, 0.2 is a bit loose (but you can glue it)
 bearing_ID = 2;
 bearing_thickness = 2.5;
 
@@ -261,9 +262,9 @@ module screw_pair(pcb_section = false)
     
     translate([0, SHOW_SCREW_DEPTH?holder_width:holder_width/2,-board_thickness-epsilon]) {
         // the screws
-        translate([-(wheel_gear_PR+motor_PR)/2,0,0])
+        translate([-(motor_to_4wheel_centers)/2,0,0])
         mount_screw(pcb_section);
-        translate([+(wheel_gear_PR+motor_PR)/2,0,0])
+        translate([+(motor_to_4wheel_centers)/2,0,0])
         mount_screw(pcb_section);
     }
 }
@@ -429,11 +430,11 @@ module bearing_hole()
 
 module wheel_assembly()
 {
-    translate([wheel_gear_PR+motor_PR,0,0]) {
+    translate([motor_to_4wheel_centers,0,0]) {
         wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
         if(enable_tyres) { tyre([0, 0, 0], 0, wheel_diameter); }
     }
-    translate([-(wheel_gear_PR+motor_PR),0,0]) {
+    translate([-(motor_to_4wheel_centers),0,0]) {
         wheel_and_gear([0,0,0],0, wheel_gear_mm_per_tooth, wheel_diameter);
         if(enable_tyres) { tyre([0, 0, 0], 0, wheel_diameter); }
     }
@@ -471,6 +472,9 @@ module motor_holder(motor_height)
             // put axle holes in motor holder here
             // put mounting holder in motor holder here
             union() { 
+                    // Add version
+                    translate([+holder_length/2-0.1,1,0.5]) rotate([90,0,90]) linear_extrude(height = 0.5) text("5", size=3);
+
                     translate([-holder_length/2, -epsilon, 0]) {
                 
                     // motor hole
@@ -482,11 +486,11 @@ module motor_holder(motor_height)
                     }
                 }
                     // bearing holes
-                    translate([wheel_gear_PR+motor_PR,holder_width,motor_body_diameter/2+motor_rise]) {
+                    translate([motor_to_4wheel_centers,holder_width,motor_body_diameter/2+motor_rise]) {
                         translate([0, 0, 0]) bearing_hole();
                         translate([0,-bearing_thickness,0]) bearing_hole();
                     }
-                    translate([-(wheel_gear_PR+motor_PR),holder_width,motor_body_diameter/2+motor_rise]) {
+                    translate([-(motor_to_4wheel_centers),holder_width,motor_body_diameter/2+motor_rise]) {
                         translate([0, 0, 0]) bearing_hole();
                         translate([0,-bearing_thickness,0]) bearing_hole();
                     }
@@ -499,11 +503,11 @@ module motor_holder(motor_height)
         if(false)
         {
             // bearings
-            translate([wheel_gear_PR+motor_PR,holder_width,motor_body_diameter/2+motor_rise]) {
+            translate([motor_to_4wheel_centers,holder_width,motor_body_diameter/2+motor_rise]) {
                 translate([0, epsilon, 0]) bearing();
                 translate([0,-bearing_thickness-epsilon,0]) bearing();
             }
-            translate([-(wheel_gear_PR+motor_PR),holder_width,motor_body_diameter/2+motor_rise]) {
+            translate([-(motor_to_4wheel_centers),holder_width,motor_body_diameter/2+motor_rise]) {
                 translate([0, epsilon, 0]) bearing();
                 translate([0,-bearing_thickness-epsilon,0]) bearing();
             }
@@ -588,8 +592,8 @@ else if(render_gears_only)
     rotate([-90, 0, 0])
     {
         motor_gear([0,0,0], 0);
-        translate([wheel_gear_PR+motor_PR+1, 0, 0]) wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
-        translate([-(wheel_gear_PR+motor_PR+1), 0, 0]) wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
+        translate([motor_to_4wheel_centers+1, 0, 0]) wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
+        translate([-(motor_to_4wheel_centers+1), 0, 0]) wheel_and_gear([0,0,0], 0, wheel_gear_mm_per_tooth, wheel_diameter);
     }
 }
 else if(render_pcb_only)
